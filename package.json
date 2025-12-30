@@ -1,0 +1,19 @@
+{
+  "name": "proofpay-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ProofPay monorepo with Fastify API and Next.js web app",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "start": "npm run start --workspaces"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
+

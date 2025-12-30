@@ -1,0 +1,29 @@
+{
+  "name": "@proofpay/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "build": "echo 'No build step required for Fastify'",
+    "migrate": "node scripts/run-migration.js",
+    "verify-tables": "node scripts/verify-tables.js",
+    "test-webhook": "node scripts/test-webhook.js",
+    "create-test-payment": "node scripts/create-test-payment.js",
+    "list-payments": "node scripts/list-payments.js",
+    "check-receipts": "node scripts/check-receipts.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.4.0",
+    "@supabase/supabase-js": "^2.8.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.24.3",
+    "square": "^40.0.0",
+    "undici": "^5.28.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "@vercel/node": "^3.0.0"
+  }
+}
