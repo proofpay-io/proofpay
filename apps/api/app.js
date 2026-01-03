@@ -750,25 +750,25 @@ const start = async () => {
         });
 
         // Transform receipt items - map item_name to name for frontend
-        // The database stores item_name, so we need to map it to name for the frontend
-        const receiptItems = (receipt.receipt_items || []).map(item => {
+        // Use the directly fetched items with item_name
+        const receiptItems = receiptItemsWithNames.map(item => {
           // Get item_name from database (it's stored as item_name in receipt_items table)
-          const itemName = item.item_name || item.name || 'Unknown Item';
+          const itemName = item.item_name || 'Unknown Item';
           
           // Calculate total_price if not provided
           const itemPrice = parseFloat(item.item_price) || 0;
           const itemQuantity = parseInt(item.quantity) || 1;
-          const totalPrice = item.total_price || (itemPrice * itemQuantity).toString();
+          const totalPrice = (itemPrice * itemQuantity).toString();
           
           return {
             name: itemName,
             quantity: itemQuantity,
-            item_price: item.item_price || '0',
+            item_price: item.item_price ? item.item_price.toString() : '0',
             total_price: totalPrice,
-            description: item.description || null,
-            sku: item.sku || null,
-            variation: item.variation || null,
-            category: item.category || null,
+            description: null,
+            sku: null,
+            variation: null,
+            category: null,
           };
         });
 
