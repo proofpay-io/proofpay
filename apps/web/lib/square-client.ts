@@ -13,7 +13,7 @@ function createSquareClient(): SquareClient | null {
   return new SquareClient({
     accessToken: squareAccessToken,
     environment: squareEnvironment === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
-  });
+  } as any);
 }
 
 /**
