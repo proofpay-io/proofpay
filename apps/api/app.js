@@ -650,20 +650,6 @@ const start = async () => {
 
         const { verification_state, receipt, share } = result;
 
-        // Fetch receipt items directly from database using nested query (like receipts endpoint)
-        // This ensures item_name is included correctly
-        const { data: receiptWithItems, error: receiptError } = await supabase
-          .from('receipts')
-          .select(`
-            *,
-            receipt_items (*)
-          `)
-          .eq('id', receipt.id)
-          .single();
-
-        // Use items from the nested query if successful, otherwise fall back
-        const receiptItemsWithNames = receiptWithItems?.receipt_items || receipt.receipt_items || [];
-
         // Fetch dispute details if receipt is disputed
         let disputeInfo = null;
         if (verification_state === 'DISPUTED') {
@@ -791,7 +777,7 @@ const start = async () => {
             currency: receipt.currency,
             created_at: receipt.created_at,
             purchase_time: receipt.purchase_time,
-            receipt_items: receiptItems,
+            receipt_items: receipt.receipt_items || [],
             confidence_score: receipt.confidence_score,
             confidence_label: receipt.confidence_label,
             confidence_reasons: receipt.confidence_reasons,
