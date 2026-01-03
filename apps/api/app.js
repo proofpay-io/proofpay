@@ -745,11 +745,12 @@ const start = async () => {
         // Transform receipt items - map item_name to name for frontend
         const receiptItems = receipt.receipt_items?.map(item => {
           // Handle item_name mapping - use item_name from database, with fallbacks
-          const itemName = (item.item_name && item.item_name.trim()) 
-            ? item.item_name.trim() 
-            : (item.name && item.name.trim()) 
-              ? item.name.trim() 
-              : 'Unknown Item';
+          let itemName = 'Unknown Item';
+          if (item.item_name && typeof item.item_name === 'string' && item.item_name.trim()) {
+            itemName = item.item_name.trim();
+          } else if (item.name && typeof item.name === 'string' && item.name.trim()) {
+            itemName = item.name.trim();
+          }
           
           return {
             name: itemName,
