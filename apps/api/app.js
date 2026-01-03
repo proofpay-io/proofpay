@@ -751,36 +751,20 @@ const start = async () => {
 
         // Transform receipt items - map item_name to name for frontend
         // The database stores item_name, so we need to map it to name for the frontend
-        fastify.log.info('🔍 [VERIFY] Receipt items before mapping:', {
-          itemCount: receipt.receipt_items?.length || 0,
-          firstItem: receipt.receipt_items?.[0] || null,
-          allItemKeys: receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]) : []
-        });
-        
         const receiptItems = (receipt.receipt_items || []).map(item => {
-          // Direct mapping: item_name from database -> name for frontend
-          // Handle empty strings explicitly
-          let itemName = 'Unknown Item';
-          if (item.item_name && String(item.item_name).trim()) {
-            itemName = String(item.item_name).trim();
-          } else if (item.name && String(item.name).trim()) {
-            itemName = String(item.name).trim();
-          }
+          // Get item_name from database (it's stored as item_name in receipt_items table)
+          const itemName = item.item_name || item.name || 'Unknown Item';
           
-          fastify.log.info('🔍 [VERIFY] Mapping item:', {
-            item_name: item.item_name,
-            item_name_type: typeof item.item_name,
-            item_name_length: item.item_name ? String(item.item_name).length : 0,
-            name: item.name,
-            mappedName: itemName,
-            itemKeys: Object.keys(item)
-          });
+          // Calculate total_price if not provided
+          const itemPrice = parseFloat(item.item_price) || 0;
+          const itemQuantity = parseInt(item.quantity) || 1;
+          const totalPrice = item.total_price || (itemPrice * itemQuantity).toString();
           
           return {
             name: itemName,
-            quantity: item.quantity || 1,
+            quantity: itemQuantity,
             item_price: item.item_price || '0',
-            total_price: item.total_price || (item.item_price && item.quantity ? (parseFloat(item.item_price) * parseInt(item.quantity, 10)).toString() : item.item_price || '0'),
+            total_price: totalPrice,
             description: item.description || null,
             sku: item.sku || null,
             variation: item.variation || null,
