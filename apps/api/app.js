@@ -649,13 +649,16 @@ const start = async () => {
         }
 
         const { verification_state, receipt, share } = result;
-        
-        // Debug: Log receipt items structure - this should show what we're getting from getReceiptByToken
-        fastify.log.info('🔍 DEBUG Receipt items from getReceiptByToken:', {
-          itemCount: receipt.receipt_items?.length || 0,
-          firstItemKeys: receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]) : [],
-          firstItemData: receipt.receipt_items?.[0] || null
-        });
+
+        // Fetch receipt items directly from database with explicit item_name selection
+        // This ensures item_name is included (getReceiptByToken may not return it correctly)
+        const { data: receiptItemsData, error: itemsFetchError } = await supabase
+          .from('receipt_items')
+          .select('id, item_name, item_price, quantity, created_at, updated_at')
+          .eq('receipt_id', receipt.id)
+          .order('created_at', { ascending: true });
+
+        const receiptItemsWithNames = itemsFetchError ? (receipt.receipt_items || []) : (receiptItemsData || []);
 
         // Fetch dispute details if receipt is disputed
         let disputeInfo = null;
