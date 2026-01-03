@@ -84,8 +84,15 @@ export default function VerifyReceipt() {
         const response = await fetch(`${apiUrl}/api/verify/${token}`);
         
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to verify receipt');
+          let errorMessage = 'Failed to verify receipt';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            // If response is not JSON, use status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
 
         const receiptData: VerifyResponse = await response.json();
