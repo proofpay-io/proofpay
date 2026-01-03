@@ -155,12 +155,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (orderResponse.statusCode !== 200) {
-      console.error('❌ [CREATE-SALE] Order creation failed:', orderResponse.statusCode);
+    if (orderResponse.result.errors && orderResponse.result.errors.length > 0) {
+      const errorMessages = orderResponse.result.errors.map((e: any) => e.detail || e.message).join(', ');
+      console.error('❌ [CREATE-SALE] Order creation failed:', errorMessages);
       return NextResponse.json(
         {
           error: 'Order creation failed',
-          message: `Square API returned status code: ${orderResponse.statusCode}`,
+          message: errorMessages,
         },
         { status: 500 }
       );
@@ -203,19 +204,14 @@ export async function POST(request: NextRequest) {
       orderId: orderId,
     });
 
-    if (paymentResponse.statusCode !== 200) {
-      console.error('❌ [CREATE-SALE] Payment creation failed:', paymentResponse.statusCode);
+    if (paymentResponse.result.errors && paymentResponse.result.errors.length > 0) {
+      const errorMessages = paymentResponse.result.errors.map((e: any) => e.detail || e.message).join(', ');
+      console.error('❌ [CREATE-SALE] Payment creation failed:', errorMessages);
       
-      // Log detailed error if available
-      if (paymentResponse.result.errors) {
-        const errorMessages = paymentResponse.result.errors.map((e: any) => e.detail || e.message).join(', ');
-        console.error('❌ [CREATE-SALE] Payment errors:', errorMessages);
-      }
-
       return NextResponse.json(
         {
           error: 'Payment creation failed',
-          message: `Square API returned status code: ${paymentResponse.statusCode}`,
+          message: errorMessages,
           order_id: orderId, // Return order_id even if payment fails
         },
         { status: 500 }
