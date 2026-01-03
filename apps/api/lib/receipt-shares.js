@@ -338,13 +338,9 @@ export async function getReceiptByToken(token, options = {}) {
  */
 export function getVerifyUrl(token) {
   // Determine base URL based on environment
-  // In Vercel, VERCEL_URL is the deployment URL
-  // For production, use the web app URL from env or default
-  const baseUrl = process.env.WEB_APP_URL 
-    ? process.env.WEB_APP_URL
-    : process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
+  // Priority: WEB_APP_URL env var > localhost (for development)
+  // WEB_APP_URL must be set in production to point to the web app URL
+  const baseUrl = process.env.WEB_APP_URL || 'http://localhost:3000';
   
   return `${baseUrl}/verify/${token}`;
 }
