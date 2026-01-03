@@ -251,9 +251,11 @@ export default function VerifyReceipt() {
                     <p className="text-sm text-amber-700 mt-1">This purchase is currently under dispute.</p>
                     {dispute && (
                       <div className="mt-3 pt-3 border-t border-amber-200">
-                        <p className="text-xs text-amber-800 font-medium mb-1">
-                          Reason: {dispute.reason_code.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </p>
+                        {dispute.reason_code && (
+                          <p className="text-xs text-amber-800 font-medium mb-1">
+                            Reason: {dispute.reason_code.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </p>
+                        )}
                         {dispute.notes && (
                           <p className="text-xs text-amber-700 mt-1">{dispute.notes}</p>
                         )}
@@ -276,7 +278,7 @@ export default function VerifyReceipt() {
                         )}
                         {dispute.total_amount_cents && (
                           <p className="text-xs text-amber-800 font-semibold mt-2">
-                            Disputed Amount: {formatCurrency((dispute.total_amount_cents / 100).toString(), receipt?.currency || 'USD')}
+                            Disputed Amount: {formatCurrency((dispute.total_amount_cents / 100).toString(), receipt.currency || 'USD')}
                           </p>
                         )}
                       </div>
