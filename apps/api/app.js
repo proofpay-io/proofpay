@@ -743,14 +743,44 @@ const start = async () => {
         });
 
         // Transform receipt items - map item_name to name for frontend
+        // Log the raw items to debug
+        fastify.log.info('🔍 [VERIFY] Raw receipt items:', {
+          itemCount: receipt.receipt_items?.length || 0,
+          firstItem: receipt.receipt_items?.[0] ? {
+            keys: Object.keys(receipt.receipt_items[0]),
+            item_name: receipt.receipt_items[0].item_name,
+            name: receipt.receipt_items[0].name,
+            hasItemName: !!receipt.receipt_items[0].item_name,
+            itemNameType: typeof receipt.receipt_items[0].item_name,
+          } : null
+        });
+        
         const receiptItems = receipt.receipt_items?.map(item => {
           // Handle item_name mapping - use item_name from database, with fallbacks
+          // The database stores item_name, so prioritize that
           let itemName = 'Unknown Item';
-          if (item.item_name && typeof item.item_name === 'string' && item.item_name.trim()) {
-            itemName = item.item_name.trim();
-          } else if (item.name && typeof item.name === 'string' && item.name.trim()) {
-            itemName = item.name.trim();
+          
+          // Check item_name first (from database)
+          if (item.item_name) {
+            const trimmed = String(item.item_name).trim();
+            if (trimmed) {
+              itemName = trimmed;
+            }
           }
+          
+          // Fallback to name if item_name wasn't available
+          if (itemName === 'Unknown Item' && item.name) {
+            const trimmed = String(item.name).trim();
+            if (trimmed) {
+              itemName = trimmed;
+            }
+          }
+          
+          fastify.log.info('🔍 [VERIFY] Mapped item:', {
+            originalItemName: item.item_name,
+            originalName: item.name,
+            mappedName: itemName,
+          });
           
           return {
             name: itemName,
