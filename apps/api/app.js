@@ -743,46 +743,10 @@ const start = async () => {
         });
 
         // Transform receipt items - map item_name to name for frontend
-        // Log the raw items to debug
-        fastify.log.info('🔍 [VERIFY] Raw receipt items:', {
-          itemCount: receipt.receipt_items?.length || 0,
-          firstItem: receipt.receipt_items?.[0] ? {
-            keys: Object.keys(receipt.receipt_items[0]),
-            item_name: receipt.receipt_items[0].item_name,
-            name: receipt.receipt_items[0].name,
-            hasItemName: !!receipt.receipt_items[0].item_name,
-            itemNameType: typeof receipt.receipt_items[0].item_name,
-            itemNameValue: receipt.receipt_items[0].item_name,
-          } : null
-        });
-        
+        // The database stores item_name, so we need to map it to name for the frontend
         const receiptItems = (receipt.receipt_items || []).map(item => {
-          // Handle item_name mapping - use item_name from database, with fallbacks
-          // The database stores item_name, so prioritize that
-          let itemName = 'Unknown Item';
-          
-          // Check item_name first (from database) - convert to string and trim
-          if (item.item_name != null) {
-            const nameStr = String(item.item_name).trim();
-            if (nameStr.length > 0) {
-              itemName = nameStr;
-            }
-          }
-          
-          // Fallback to name if item_name wasn't available
-          if (itemName === 'Unknown Item' && item.name != null) {
-            const nameStr = String(item.name).trim();
-            if (nameStr.length > 0) {
-              itemName = nameStr;
-            }
-          }
-          
-          fastify.log.info('🔍 [VERIFY] Mapped item:', {
-            originalItemName: item.item_name,
-            originalName: item.name,
-            mappedName: itemName,
-            itemKeys: Object.keys(item),
-          });
+          // Direct mapping: item_name from database -> name for frontend
+          const itemName = item.item_name || item.name || 'Unknown Item';
           
           return {
             name: itemName,
