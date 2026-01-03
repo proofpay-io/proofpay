@@ -752,10 +752,18 @@ const start = async () => {
         
         const receiptItems = (receipt.receipt_items || []).map(item => {
           // Direct mapping: item_name from database -> name for frontend
-          const itemName = item.item_name || item.name || 'Unknown Item';
+          // Handle empty strings explicitly
+          let itemName = 'Unknown Item';
+          if (item.item_name && String(item.item_name).trim()) {
+            itemName = String(item.item_name).trim();
+          } else if (item.name && String(item.name).trim()) {
+            itemName = String(item.name).trim();
+          }
           
           fastify.log.info('🔍 [VERIFY] Mapping item:', {
             item_name: item.item_name,
+            item_name_type: typeof item.item_name,
+            item_name_length: item.item_name ? String(item.item_name).length : 0,
             name: item.name,
             mappedName: itemName,
             itemKeys: Object.keys(item)
