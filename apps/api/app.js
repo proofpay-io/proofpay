@@ -650,12 +650,12 @@ const start = async () => {
 
         const { verification_state, receipt, share } = result;
         
-        // Debug: Log receipt items structure
-        console.log('🔍 DEBUG - Receipt items structure:', JSON.stringify({
+        // Debug: Log receipt items structure - this should show what we're getting from getReceiptByToken
+        fastify.log.info('🔍 DEBUG Receipt items from getReceiptByToken:', {
           itemCount: receipt.receipt_items?.length || 0,
-          firstItem: receipt.receipt_items?.[0] || null,
-          allItems: receipt.receipt_items || []
-        }, null, 2));
+          firstItemKeys: receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]) : [],
+          firstItemData: receipt.receipt_items?.[0] || null
+        });
 
         // Fetch dispute details if receipt is disputed
         let disputeInfo = null;
