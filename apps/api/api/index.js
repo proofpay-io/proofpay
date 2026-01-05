@@ -317,9 +317,10 @@ fastify.post('/api/disputes', async (request, reply) => {
     // GET /api/verify/:token - Get receipt by share token (public endpoint)
     fastify.get('/api/verify/:token', async (request, reply) => {
       // CRITICAL: This log MUST appear if new code is running
-      fastify.log.error('🚨🚨🚨 NEW CODE VERSION c717398 IS RUNNING 🚨🚨🚨');
-      fastify.log.warn('🚨🚨🚨 NEW CODE VERSION c717398 IS RUNNING 🚨🚨🚨');
-      fastify.log.info('🚨🚨🚨 NEW CODE VERSION c717398 IS RUNNING 🚨🚨🚨');
+      // Version: b07dc10 - Force deployment trigger
+      fastify.log.error('🚨🚨🚨 NEW CODE VERSION b07dc10 IS RUNNING 🚨🚨🚨');
+      fastify.log.warn('🚨🚨🚨 NEW CODE VERSION b07dc10 IS RUNNING 🚨🚨🚨');
+      fastify.log.info('🚨🚨🚨 NEW CODE VERSION b07dc10 IS RUNNING 🚨🚨🚨');
       
       try {
         if (!supabase) {
