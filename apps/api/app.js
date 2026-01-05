@@ -675,38 +675,32 @@ const start = async () => {
           }
         }
 
-        // SIMPLEST: Use EXACT same query as /api/receipts/:id - NO transformation, NO mapping
-        // Just copy the receipt_items directly from the query result
-        fastify.log.info('🔍 [VERIFY] Using EXACT same query as /receipts/:id (no transformation)', {
+        // FORCE: Fetch receipt_items directly with explicit column selection
+        // This bypasses nested queries and ensures item_name is always included
+        fastify.log.info('🔍 [VERIFY] Fetching receipt_items directly with explicit columns', {
           receipt_id: receipt.id,
         });
         
-        // Use EXACT same nested query as /api/receipts/:id (which we know works)
-        const { data: receiptWithItems, error: receiptError } = await supabase
-          .from('receipts')
-          .select(`
-            *,
-            receipt_items (*)
-          `)
-          .eq('id', receipt.id)
-          .single();
-        
-        // Extract receipt_items directly - NO mapping, NO transformation
-        // Use the exact same data structure that /api/receipts/:id returns
-        let receiptItems = [];
-        if (receiptError) {
-          fastify.log.error('❌ [VERIFY] Error fetching receipt with items:', receiptError);
-          receiptItems = [];
+        // Fetch items directly from receipt_items table with explicit column selection
+        const { data: receiptItems, error: itemsError } = await supabase
+          .from('receipt_items')
+          .select('id, receipt_id, item_name, item_price, quantity, created_at, updated_at, description, sku, variation, category')
+          .eq('receipt_id', receipt.id)
+          .order('created_at', { ascending: true });
+
+        if (itemsError) {
+          fastify.log.error('❌ [VERIFY] Error fetching receipt_items:', itemsError);
+          var receiptItems = [];
         } else {
-          // DIRECT COPY - no transformation, no mapping, just use what the query returns
-          receiptItems = receiptWithItems?.receipt_items || [];
-          fastify.log.info('✅ [VERIFY] Copied receipt_items directly from query (same as /receipts/:id)', {
+          fastify.log.info('✅ [VERIFY] Fetched receipt_items directly', {
             receipt_id: receipt.id,
-            item_count: receiptItems.length,
-            first_item_keys: receiptItems[0] ? Object.keys(receiptItems[0]).join(', ') : 'none',
-            first_item_has_item_name: receiptItems[0]?.item_name ? true : false,
-            first_item_name: receiptItems[0]?.item_name || 'MISSING',
+            item_count: receiptItems?.length || 0,
+            first_item_keys: receiptItems?.[0] ? Object.keys(receiptItems[0]).join(', ') : 'none',
+            first_item_has_item_name: receiptItems?.[0]?.item_name ? true : false,
+            first_item_name: receiptItems?.[0]?.item_name || 'MISSING',
+            first_item_full: receiptItems?.[0] ? JSON.stringify(receiptItems[0]) : 'none',
           });
+          var receiptItems = receiptItems || [];
         }
 
         // Fetch dispute details if receipt is disputed
