@@ -119,6 +119,14 @@ export default function VerifyReceipt() {
           }
 
           const receiptData: VerifyResponse = await response.json();
+          // Debug: Log receipt items to check if item_name is present
+          if (receiptData.receipt?.receipt_items) {
+            console.log('🔍 [VERIFY] Receipt items received:', {
+              count: receiptData.receipt.receipt_items.length,
+              firstItem: receiptData.receipt.receipt_items[0],
+              firstItemKeys: receiptData.receipt.receipt_items[0] ? Object.keys(receiptData.receipt.receipt_items[0]) : [],
+            });
+          }
           setData(receiptData);
         } catch (fetchError: any) {
           clearTimeout(timeoutId);
@@ -441,7 +449,8 @@ export default function VerifyReceipt() {
             <div className="space-y-3">
               {receipt.receipt_items.map((item, idx) => {
                 // Use item_name directly from database (same as /receipts/[id])
-                const itemName = item.item_name || '';
+                // Match the receipts detail page exactly - use item.item_name directly
+                const itemName = item.item_name;
                 
                 // Check if this item is disputed
                 const disputedItem = dispute?.disputed_items?.find(di => {
@@ -463,7 +472,7 @@ export default function VerifyReceipt() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className={`font-medium ${isDisputed ? 'text-amber-900' : 'text-gray-900'}`}>
-                            {itemName}
+                            {item.item_name}
                           </p>
                           {isDisputed && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-200 text-amber-800">
