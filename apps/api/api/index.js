@@ -328,12 +328,11 @@ fastify.post('/api/disputes', async (request, reply) => {
         fastify.log.info('🔍 Verifying share token', { token: token.substring(0, 4) + '...' });
 
         // Get receipt by token
-        // Pass null for logger to use safe console logging (prevents Pino errors)
-        console.log('🔍 [VERIFY-API] About to call getReceiptByToken with token:', token.substring(0, 4) + '...');
+        fastify.log.warn('🔍 [VERIFY-API] About to call getReceiptByToken with token:', token.substring(0, 4) + '...');
         const result = await getReceiptByToken(token, {
           logger: fastify.log // Use fastify.log to see the logs
         });
-        console.log('🔍 [VERIFY-API] getReceiptByToken returned:', {
+        fastify.log.warn('🔍 [VERIFY-API] getReceiptByToken returned:', {
           has_result: !!result,
           has_receipt: !!result?.receipt,
           receipt_id: result?.receipt?.id,
@@ -341,7 +340,6 @@ fastify.post('/api/disputes', async (request, reply) => {
           first_item_keys: result?.receipt?.receipt_items?.[0] ? Object.keys(result.receipt.receipt_items[0]).join(', ') : 'none',
           first_item_has_item_name: result?.receipt?.receipt_items?.[0]?.item_name ? true : false,
           first_item_name_value: result?.receipt?.receipt_items?.[0]?.item_name || 'MISSING',
-          first_item_full: result?.receipt?.receipt_items?.[0] ? JSON.stringify(result.receipt.receipt_items[0]) : 'none',
         });
 
         // Handle invalid states
@@ -393,20 +391,13 @@ fastify.post('/api/disputes', async (request, reply) => {
         const { verification_state, receipt, share } = result;
 
         // Log receipt items structure to verify item_name is present
-        console.log('🔍 [VERIFY-API] Receipt items from getReceiptByToken:', {
+        fastify.log.warn('🔍 [VERIFY-API] Receipt items from getReceiptByToken:', {
           receipt_id: receipt.id,
           items_count: receipt.receipt_items?.length || 0,
           first_item_keys: receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]).join(', ') : 'none',
           first_item_has_item_name: receipt.receipt_items?.[0]?.item_name ? true : false,
           first_item_name: receipt.receipt_items?.[0]?.item_name || 'MISSING',
           first_item_full: receipt.receipt_items?.[0] ? JSON.stringify(receipt.receipt_items[0]) : 'none',
-        });
-        fastify.log.info('🔍 [VERIFY-API] Receipt items from getReceiptByToken', {
-          receipt_id: receipt.id,
-          items_count: receipt.receipt_items?.length || 0,
-          first_item_keys: receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]).join(', ') : 'none',
-          first_item_has_item_name: receipt.receipt_items?.[0]?.item_name ? true : false,
-          first_item_name: receipt.receipt_items?.[0]?.item_name || 'MISSING',
         });
 
         // Fetch dispute details if receipt is disputed
