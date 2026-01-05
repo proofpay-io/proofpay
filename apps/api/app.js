@@ -651,14 +651,33 @@ const start = async () => {
         const { verification_state, receipt, share } = result;
 
         // Log verification resolution for diagnosis
+        const itemCount = receipt.receipt_items?.length || 0;
+        const firstItemHasItemName = receipt.receipt_items?.[0]?.item_name ? true : false;
+        const firstItemKeys = receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]).join(', ') : 'none';
+        
         fastify.log.info('🔍 [VERIFY] Resolving token to receipt', {
           token: token.substring(0, 4) + '...',
           receipt_id: receipt.id,
-          item_count: receipt.receipt_items?.length || 0,
+          item_count: itemCount,
+          first_item_has_item_name: firstItemHasItemName,
+          first_item_keys: firstItemKeys,
         });
+
+        // Verify receipt_items have item_name - if missing, log warning
+        if (receipt.receipt_items && receipt.receipt_items.length > 0) {
+          const itemsWithoutName = receipt.receipt_items.filter(item => !item.item_name || item.item_name.trim() === '');
+          if (itemsWithoutName.length > 0) {
+            fastify.log.warn('⚠️ [VERIFY] Some receipt_items are missing item_name', {
+              receipt_id: receipt.id,
+              items_without_name: itemsWithoutName.length,
+              total_items: receipt.receipt_items.length,
+            });
+          }
+        }
 
         // receipt_items already included from getReceiptByToken nested query
         // Same structure as /api/receipts/:id - no mapping or transformation needed
+        // Ensure each item has item_name explicitly present in response
 
         // Fetch dispute details if receipt is disputed
         let disputeInfo = null;
@@ -784,7 +803,8 @@ const start = async () => {
         fastify.log.info('✅ Receipt retrieved by token', { 
           receiptId: receipt.id,
           viewCount: share.view_count,
-          itemCount: receipt.receipt_items?.length || 0
+          itemCount: receiptItems.length,
+          items_with_item_name: receiptItems.filter(item => item.item_name).length,
         });
 
         // Set cache-control headers to prevent caching
