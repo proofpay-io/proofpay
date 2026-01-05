@@ -682,25 +682,26 @@ const start = async () => {
         });
         
         // Fetch items directly from receipt_items table with explicit column selection
-        const { data: receiptItems, error: itemsError } = await supabase
+        const { data: dbItems, error: itemsError } = await supabase
           .from('receipt_items')
           .select('id, receipt_id, item_name, item_price, quantity, created_at, updated_at, description, sku, variation, category')
           .eq('receipt_id', receipt.id)
           .order('created_at', { ascending: true });
 
+        let receiptItems = [];
         if (itemsError) {
           fastify.log.error('❌ [VERIFY] Error fetching receipt_items:', itemsError);
-          var receiptItems = [];
+          receiptItems = [];
         } else {
+          receiptItems = dbItems || [];
           fastify.log.info('✅ [VERIFY] Fetched receipt_items directly', {
             receipt_id: receipt.id,
-            item_count: receiptItems?.length || 0,
-            first_item_keys: receiptItems?.[0] ? Object.keys(receiptItems[0]).join(', ') : 'none',
-            first_item_has_item_name: receiptItems?.[0]?.item_name ? true : false,
-            first_item_name: receiptItems?.[0]?.item_name || 'MISSING',
-            first_item_full: receiptItems?.[0] ? JSON.stringify(receiptItems[0]) : 'none',
+            item_count: receiptItems.length,
+            first_item_keys: receiptItems[0] ? Object.keys(receiptItems[0]).join(', ') : 'none',
+            first_item_has_item_name: receiptItems[0]?.item_name ? true : false,
+            first_item_name: receiptItems[0]?.item_name || 'MISSING',
+            first_item_full: receiptItems[0] ? JSON.stringify(receiptItems[0]) : 'none',
           });
-          var receiptItems = receiptItems || [];
         }
 
         // Fetch dispute details if receipt is disputed
