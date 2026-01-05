@@ -783,7 +783,7 @@ const start = async () => {
             currency: receipt.currency,
             created_at: receipt.created_at,
             purchase_time: receipt.purchase_time,
-            receipt_items: receiptItems, // Direct from Supabase nested query (same as /receipts/:id)
+            receipt_items: receipt.receipt_items || [], // Direct from nested query (same as /api/receipts/:id)
             confidence_score: receipt.confidence_score,
             confidence_label: receipt.confidence_label,
             confidence_reasons: receipt.confidence_reasons,
