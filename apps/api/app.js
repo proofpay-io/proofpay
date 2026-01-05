@@ -865,19 +865,23 @@ const start = async () => {
           dispute: disputeInfo
         };
 
+        // CRITICAL: Log BEFORE sending response
+        fastify.log.info('🔍 [VERIFY] FINAL CHECK - About to send response', {
+          receiptId: receipt.id,
+          viewCount: share.view_count,
+          finalReceiptItems_count: finalReceiptItems.length,
+          finalReceiptItems_first_item_keys: finalReceiptItems[0] ? Object.keys(finalReceiptItems[0]).join(', ') : 'none',
+          finalReceiptItems_first_item_name: finalReceiptItems[0]?.item_name || 'MISSING',
+          response_receipt_items_count: response.receipt.receipt_items.length,
+          response_first_item_keys: response.receipt.receipt_items[0] ? Object.keys(response.receipt.receipt_items[0]).join(', ') : 'none',
+          response_first_item_name: response.receipt.receipt_items[0]?.item_name || 'MISSING',
+        });
+
         fastify.log.info('✅ Receipt retrieved by token', { 
           receiptId: receipt.id,
           viewCount: share.view_count,
           itemCount: finalReceiptItems.length,
           first_item_has_name: finalReceiptItems[0]?.item_name ? true : false,
-        });
-
-        // CRITICAL: Log the actual response object before sending
-        fastify.log.info('🔍 [VERIFY] Sending response with receipt_items:', {
-          response_receipt_items_count: response.receipt.receipt_items.length,
-          response_first_item_keys: response.receipt.receipt_items[0] ? Object.keys(response.receipt.receipt_items[0]).join(', ') : 'none',
-          response_first_item_name: response.receipt.receipt_items[0]?.item_name || 'MISSING',
-          response_first_item_full: response.receipt.receipt_items[0] ? JSON.stringify(response.receipt.receipt_items[0]) : 'none',
         });
 
         // Set cache-control headers to prevent caching
