@@ -329,8 +329,19 @@ fastify.post('/api/disputes', async (request, reply) => {
 
         // Get receipt by token
         // Pass null for logger to use safe console logging (prevents Pino errors)
+        console.log('🔍 [VERIFY-API] About to call getReceiptByToken with token:', token.substring(0, 4) + '...');
         const result = await getReceiptByToken(token, {
-          logger: null // Use safe console logging instead of fastify.log
+          logger: fastify.log // Use fastify.log to see the logs
+        });
+        console.log('🔍 [VERIFY-API] getReceiptByToken returned:', {
+          has_result: !!result,
+          has_receipt: !!result?.receipt,
+          receipt_id: result?.receipt?.id,
+          receipt_items_count: result?.receipt?.receipt_items?.length || 0,
+          first_item_keys: result?.receipt?.receipt_items?.[0] ? Object.keys(result.receipt.receipt_items[0]).join(', ') : 'none',
+          first_item_has_item_name: result?.receipt?.receipt_items?.[0]?.item_name ? true : false,
+          first_item_name_value: result?.receipt?.receipt_items?.[0]?.item_name || 'MISSING',
+          first_item_full: result?.receipt?.receipt_items?.[0] ? JSON.stringify(result.receipt.receipt_items[0]) : 'none',
         });
 
         // Handle invalid states
