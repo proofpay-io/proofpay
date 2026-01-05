@@ -776,18 +776,9 @@ const start = async () => {
           success: true,
           verification_state: verification_state,
           receipt: {
-            id: receipt.id,
-            payment_id: receipt.payment_id,
-            merchant_name: receipt.merchant_name,
-            amount: receipt.amount,
-            currency: receipt.currency,
-            created_at: receipt.created_at,
-            purchase_time: receipt.purchase_time,
-            receipt_items: receipt.receipt_items || [], // Direct from nested query (same as /api/receipts/:id)
-            confidence_score: receipt.confidence_score,
-            confidence_label: receipt.confidence_label,
-            confidence_reasons: receipt.confidence_reasons,
-            source: receipt.source,
+            ...receipt,
+            // receipt_items already included from spread operator (same as /api/receipts/:id)
+            // All fields from receipt are included, including receipt_items from nested query
           },
           share: {
             view_count: share.view_count,
