@@ -650,67 +650,44 @@ const start = async () => {
 
         const { verification_state, receipt, share } = result;
 
-        // CRITICAL: Log immediately to verify code execution
-        fastify.log.info('🔍 [VERIFY] CODE EXECUTING - receipt_id: ' + receipt.id);
-        fastify.log.info('🔍 [VERIFY] receipt.receipt_items count: ' + (receipt.receipt_items?.length || 0));
-
-        // getReceiptByToken already fetches receipt_items with item_name explicitly selected
-        // Use those items directly, but ensure item_name is present in each item
-        fastify.log.info('🔍 [VERIFY] Using receipt_items from getReceiptByToken', {
+        // CRITICAL: Fetch receipt_items DIRECTLY from database with explicit column selection
+        // Don't rely on getReceiptByToken - fetch fresh to ensure item_name is always included
+        fastify.log.info('🔍 [VERIFY] Fetching receipt_items directly from DB', {
           receipt_id: receipt.id,
-          item_count: receipt.receipt_items?.length || 0,
-          first_item_has_name: receipt.receipt_items?.[0]?.item_name ? true : false,
         });
 
-        // CRITICAL: Log what we're getting from getReceiptByToken
-        fastify.log.info('🔍 [VERIFY] Items from getReceiptByToken:', {
-          item_count: receipt.receipt_items?.length || 0,
-          first_item_keys: receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]).join(', ') : 'none',
-          first_item_full: receipt.receipt_items?.[0] ? JSON.stringify(receipt.receipt_items[0]) : 'none',
-        });
+        const { data: dbItems, error: itemsError } = await supabase
+          .from('receipt_items')
+          .select('id, receipt_id, item_name, item_price, quantity, created_at, updated_at, description, sku, variation, category')
+          .eq('receipt_id', receipt.id)
+          .order('created_at', { ascending: true });
 
-        // Map items to explicitly ensure item_name is present (getReceiptByToken should have it, but be safe)
-        let receiptItems = (receipt.receipt_items || []).map((item, idx) => {
-          // Log original item to see what we're working with
-          fastify.log.info(`🔍 [VERIFY] Mapping item ${idx}:`, {
-            original_keys: Object.keys(item),
-            original_item: JSON.stringify(item),
-            has_item_name: 'item_name' in item,
-            item_name_value: item.item_name,
+        let receiptItems = [];
+        if (itemsError) {
+          fastify.log.error('❌ [VERIFY] Error fetching receipt_items:', itemsError);
+          receiptItems = [];
+        } else {
+          receiptItems = dbItems || [];
+          fastify.log.info('✅ [VERIFY] Fetched receipt_items from DB', {
+            receipt_id: receipt.id,
+            item_count: receiptItems.length,
+            first_item_keys: receiptItems[0] ? Object.keys(receiptItems[0]).join(', ') : 'none',
+            first_item_has_item_name: receiptItems[0]?.item_name ? true : false,
+            first_item_name: receiptItems[0]?.item_name || 'MISSING',
+            first_item_full: receiptItems[0] ? JSON.stringify(receiptItems[0]) : 'none',
           });
 
-          const mappedItem = {
-            id: item.id || null,
-            receipt_id: item.receipt_id || receipt.id,
-            item_name: item.item_name || 'Item Name Missing', // FORCE item_name to be present
-            item_price: String(item.item_price || '0'),
-            quantity: item.quantity || 1,
-            created_at: item.created_at || null,
-            updated_at: item.updated_at || null,
-            description: item.description || null,
-            sku: item.sku || null,
-            variation: item.variation || null,
-            category: item.category || null,
-          };
-          
-          if (!mappedItem.item_name || mappedItem.item_name === 'Item Name Missing') {
-            fastify.log.error(`❌ [VERIFY] Item ${idx} missing item_name after mapping:`, {
-              item_id: item.id,
-              original_item_keys: Object.keys(item),
-              original_item: JSON.stringify(item),
-              mapped_item: JSON.stringify(mappedItem),
-            });
-          }
-          
-          return mappedItem;
-        });
-
-        fastify.log.info('✅ [VERIFY] Mapped receipt_items', {
-          receipt_id: receipt.id,
-          item_count: receiptItems.length,
-          first_item_has_name: receiptItems[0]?.item_name ? true : false,
-          first_item_name: receiptItems[0]?.item_name || 'MISSING',
-        });
+          // Log ALL items to see which ones are missing item_name
+          receiptItems.forEach((item, idx) => {
+            if (!item.item_name) {
+              fastify.log.error(`❌ [VERIFY] Item ${idx} missing item_name from DB:`, {
+                item_id: item.id,
+                item_keys: Object.keys(item),
+                item_json: JSON.stringify(item),
+              });
+            }
+          });
+        }
 
         // Fetch dispute details if receipt is disputed
         let disputeInfo = null;
