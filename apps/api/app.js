@@ -675,19 +675,50 @@ const start = async () => {
           }
         }
 
-        // receipt_items already included from getReceiptByToken (fetched separately)
-        // ALWAYS fetch items directly from database to ensure item_name is present
-        // Don't rely on receipt.receipt_items from getReceiptByToken
-        fastify.log.info('🔍 [VERIFY] Fetching receipt_items directly from DB', {
+        // TESTING: Use EXACT same query as /api/receipts/:id endpoint
+        // This ensures we get the same data structure that works on the receipts page
+        fastify.log.info('🔍 [VERIFY] Using same query as /receipts/:id endpoint', {
           receipt_id: receipt.id,
         });
         
-        // CRITICAL: Use select('*') to get ALL columns, then explicitly verify item_name exists
-        const { data: dbItems, error: dbError } = await supabase
-          .from('receipt_items')
-          .select('*') // Select ALL columns to avoid any RLS or column selection issues
-          .eq('receipt_id', receipt.id)
-          .order('created_at', { ascending: true });
+        // Use EXACT same nested query as /api/receipts/:id (which we know works)
+        const { data: receiptWithItems, error: receiptError } = await supabase
+          .from('receipts')
+          .select(`
+            *,
+            receipt_items (*)
+          `)
+          .eq('id', receipt.id)
+          .single();
+        
+        // Extract receipt_items from the nested query result (same as /api/receipts/:id)
+        let receiptItems = [];
+        if (receiptError) {
+          fastify.log.error('❌ [VERIFY] Error fetching receipt with items (nested query):', receiptError);
+          // Fallback to direct query
+          const { data: dbItems, error: dbError } = await supabase
+            .from('receipt_items')
+            .select('*')
+            .eq('receipt_id', receipt.id)
+            .order('created_at', { ascending: true });
+          
+          if (dbError) {
+            fastify.log.error('❌ [VERIFY] Fallback query also failed:', dbError);
+            receiptItems = [];
+          } else {
+            receiptItems = dbItems || [];
+          }
+        } else {
+          // Use receipt_items from nested query (same as /api/receipts/:id)
+          receiptItems = receiptWithItems?.receipt_items || [];
+          fastify.log.info('✅ [VERIFY] Fetched receipt_items using nested query (same as /receipts/:id)', {
+            receipt_id: receipt.id,
+            item_count: receiptItems.length,
+            first_item_keys: receiptItems[0] ? Object.keys(receiptItems[0]).join(', ') : 'none',
+            first_item_has_item_name: receiptItems[0]?.item_name ? true : false,
+            first_item_name: receiptItems[0]?.item_name || 'MISSING',
+          });
+        }
         
         if (dbError) {
           fastify.log.error('❌ [VERIFY] Error fetching receipt_items from DB:', dbError);
