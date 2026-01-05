@@ -119,19 +119,6 @@ export default function VerifyReceipt() {
           }
 
           const receiptData: VerifyResponse = await response.json();
-          // Debug: Log receipt items to check if item_name is present
-          if (receiptData.receipt?.receipt_items) {
-            console.log('🔍 [VERIFY] Receipt items received:', {
-              count: receiptData.receipt.receipt_items.length,
-              firstItem: receiptData.receipt.receipt_items[0],
-              firstItemKeys: receiptData.receipt.receipt_items[0] ? Object.keys(receiptData.receipt.receipt_items[0]) : [],
-              firstItemHasItemName: receiptData.receipt.receipt_items[0]?.item_name ? true : false,
-              firstItemName: receiptData.receipt.receipt_items[0]?.item_name || 'MISSING',
-              allItemNames: receiptData.receipt.receipt_items.map((item: any) => item.item_name || 'MISSING'),
-            });
-          } else {
-            console.warn('⚠️ [VERIFY] No receipt_items in response:', receiptData);
-          }
           setData(receiptData);
         } catch (fetchError: any) {
           clearTimeout(timeoutId);
@@ -463,7 +450,8 @@ export default function VerifyReceipt() {
                 </thead>
                 <tbody>
                   {receipt.receipt_items.map((item, idx) => {
-                    const itemName = item.item_name || (item as any).name || 'Item Name Missing';
+                    // Use item_name directly from API response (same as receipts page)
+                    const itemName = item.item_name;
                     const unitPrice = parseFloat(item.item_price || '0');
                     const quantity = item.quantity || 1;
                     const totalPrice = unitPrice * quantity;
