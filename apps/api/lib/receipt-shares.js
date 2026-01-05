@@ -238,26 +238,10 @@ export async function getReceiptByToken(token, options = {}) {
       };
     }
 
-    // Fetch receipt with items using nested query (same as /api/receipts/:id)
-    // Explicitly select item_name to ensure it's included
+    // Fetch receipt first (without nested query to avoid any issues)
     const { data: receipt, error: receiptError } = await supabase
       .from('receipts')
-      .select(`
-        *,
-        receipt_items (
-          id,
-          receipt_id,
-          item_name,
-          item_price,
-          quantity,
-          created_at,
-          updated_at,
-          description,
-          sku,
-          variation,
-          category
-        )
-      `)
+      .select('*')
       .eq('id', share.receipt_id)
       .single();
 
@@ -267,6 +251,26 @@ export async function getReceiptByToken(token, options = {}) {
         verification_state: 'INVALID',
         reason: 'Receipt not found',
       };
+    }
+
+    // Fetch receipt_items separately to ensure item_name is always included
+    // This is more reliable than nested queries
+    const { data: receiptItems, error: itemsError } = await supabase
+      .from('receipt_items')
+      .select('id, receipt_id, item_name, item_price, quantity, created_at, updated_at, description, sku, variation, category')
+      .eq('receipt_id', receipt.id)
+      .order('created_at', { ascending: true });
+
+    if (itemsError) {
+      safeLogWarn(logger, '⚠️ [RECEIPT-SHARE] Error fetching receipt items:', itemsError);
+      receipt.receipt_items = []; // Set empty array on error
+    } else {
+      receipt.receipt_items = receiptItems || [];
+      safeLogInfo(logger, '✅ [RECEIPT-SHARE] Fetched receipt items separately', {
+        receipt_id: receipt.id,
+        item_count: receipt.receipt_items.length,
+        first_item_has_name: receipt.receipt_items[0]?.item_name ? true : false,
+      });
     }
 
     // Check for active disputes (submitted or in_review)
@@ -453,26 +457,10 @@ export async function verifyShareToken(token, options = {}) {
       };
     }
 
-    // Fetch receipt with items using nested query (same as /api/receipts/:id)
-    // Explicitly select item_name to ensure it's included
+    // Fetch receipt first (without nested query to avoid any issues)
     const { data: receipt, error: receiptError } = await supabase
       .from('receipts')
-      .select(`
-        *,
-        receipt_items (
-          id,
-          receipt_id,
-          item_name,
-          item_price,
-          quantity,
-          created_at,
-          updated_at,
-          description,
-          sku,
-          variation,
-          category
-        )
-      `)
+      .select('*')
       .eq('id', share.receipt_id)
       .single();
 
