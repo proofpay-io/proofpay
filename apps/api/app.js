@@ -586,6 +586,9 @@ const start = async () => {
     // GET /api/verify/:token - Get receipt by share token (public endpoint)
     fastify.get('/api/verify/:token', async (request, reply) => {
       try {
+        // CRITICAL: Log immediately to confirm this code path is executing
+        fastify.log.info('🔍 [VERIFY-ENDPOINT] VERIFY ENDPOINT CALLED - NEW CODE VERSION');
+        
         if (!supabase) {
           return reply.code(503).send({
             error: 'Database not configured',
@@ -595,6 +598,7 @@ const start = async () => {
 
         const token = request.params.token;
         fastify.log.info('🔍 Verifying share token', { token: token.substring(0, 4) + '...' });
+        fastify.log.info('🔍 [VERIFY-ENDPOINT] Token received: ' + token.substring(0, 4) + '...');
 
         // Get receipt by token
         // Pass null for logger to use safe console logging (prevents Pino errors)
