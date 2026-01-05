@@ -441,7 +441,7 @@ export default function VerifyReceipt() {
             <div className="space-y-3">
               {receipt.receipt_items.map((item, idx) => {
                 // Use item_name directly from database (same as /receipts/[id])
-                const itemName = item.item_name;
+                const itemName = item.item_name || '';
                 
                 // Check if this item is disputed
                 const disputedItem = dispute?.disputed_items?.find(di => {
@@ -507,7 +507,7 @@ export default function VerifyReceipt() {
                       </div>
                       <div className="text-right ml-4">
                         <p className={`font-semibold ${isDisputed ? 'text-amber-900' : 'text-gray-900'}`}>
-                          {formatCurrency(item.total_price || item.item_price, receipt.currency)}
+                          {formatCurrency((parseFloat(item.item_price) * item.quantity).toString(), receipt.currency)}
                         </p>
                         {item.item_price && item.quantity > 1 && (
                           <p className={`text-xs mt-1 ${isDisputed ? 'text-amber-700' : 'text-gray-500'}`}>
