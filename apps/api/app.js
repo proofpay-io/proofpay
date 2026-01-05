@@ -587,7 +587,10 @@ const start = async () => {
     fastify.get('/api/verify/:token', async (request, reply) => {
       try {
         // CRITICAL: Log immediately to confirm this code path is executing
-        fastify.log.info('🔍 [VERIFY-ENDPOINT] VERIFY ENDPOINT CALLED - NEW CODE VERSION');
+        // This MUST appear if new code is running
+        console.log('🔍 [VERIFY-ENDPOINT] VERIFY ENDPOINT CALLED - NEW CODE VERSION - CONSOLE.LOG');
+        fastify.log.info('🔍 [VERIFY-ENDPOINT] VERIFY ENDPOINT CALLED - NEW CODE VERSION - FASTIFY.LOG');
+        fastify.log.warn('🔍 [VERIFY-ENDPOINT] VERIFY ENDPOINT CALLED - NEW CODE VERSION - FASTIFY.LOG WARN');
         
         if (!supabase) {
           return reply.code(503).send({
