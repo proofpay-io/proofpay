@@ -485,16 +485,25 @@ fastify.post('/api/disputes', async (request, reply) => {
             currency: receipt.currency,
             created_at: receipt.created_at,
             purchase_time: receipt.purchase_time,
-            receipt_items: receipt.receipt_items?.map(item => ({
-              name: item.name,
-              quantity: item.quantity,
-              item_price: item.item_price,
-              total_price: item.total_price,
-              description: item.description || null,
-              sku: item.sku || null,
-              variation: item.variation || null,
-              category: item.category || null,
-            })) || [],
+            receipt_items: receipt.receipt_items?.map(item => {
+              // Use item_name from database (database column name)
+              // Provide both 'name' and 'item_name' for frontend compatibility
+              const itemName = item.item_name || item.name || 'Unknown Item';
+              
+              return {
+                id: item.id || null,
+                receipt_id: item.receipt_id || receipt.id,
+                name: itemName, // For frontend compatibility
+                item_name: itemName, // Database column name
+                item_price: String(item.item_price || '0'),
+                quantity: item.quantity || 1,
+                total_price: item.total_price || (item.item_price && item.quantity ? (parseFloat(item.item_price) * parseInt(item.quantity, 10)).toString() : '0'),
+                description: item.description || null,
+                sku: item.sku || null,
+                variation: item.variation || null,
+                category: item.category || null,
+              };
+            }) || [],
             confidence_score: receipt.confidence_score,
             confidence_label: receipt.confidence_label,
             confidence_reasons: receipt.confidence_reasons,
