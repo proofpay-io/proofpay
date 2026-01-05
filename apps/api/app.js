@@ -656,16 +656,13 @@ const start = async () => {
           receipt_id: receipt.id,
         });
 
-        // Fetch receipt items using nested query (same approach as /receipts/:id that works)
-        // This ensures we get all fields including item_name from the database
-        const { data: receiptWithItems, error: itemsError } = await supabase
-          .from('receipts')
-          .select(`
-            id,
-            receipt_items (*)
-          `)
-          .eq('id', receipt.id)
-          .single();
+        // Fetch receipt items with explicit column selection to ensure item_name is included
+        // Explicitly select item_name and other required columns from receipt_items
+        const { data: receiptItemsData, error: itemsError } = await supabase
+          .from('receipt_items')
+          .select('id, receipt_id, item_name, item_price, quantity, created_at, updated_at, description, sku, variation, category')
+          .eq('receipt_id', receipt.id)
+          .order('created_at', { ascending: true });
 
         if (itemsError) {
           fastify.log.error('❌ [VERIFY] Error fetching receipt items:', {
@@ -675,37 +672,34 @@ const start = async () => {
           });
         }
 
-        // Extract items from nested query result (same structure as /receipts/:id)
-        const receiptItemsData = receiptWithItems?.receipt_items || [];
-
-        // Log diagnostic information (no sensitive data)
-        const itemCount = receiptItemsData.length;
+        // Log diagnostic information (non-sensitive data)
+        const itemCount = receiptItemsData?.length || 0;
         const hasRealItems = itemCount > 0;
-        const firstItemHasName = receiptItemsData[0]?.item_name ? true : false;
-        const usedPlaceholderItems = false; // We never use placeholders - only return real items from DB
+        const firstItemHasName = receiptItemsData?.[0]?.item_name ? true : false;
+        const firstItemHasNameKey = receiptItemsData?.[0] && 'item_name' in receiptItemsData[0];
 
         fastify.log.info('🔍 [VERIFY] Receipt items fetched', {
-          token: token.substring(0, 4) + '...',
           receipt_id: receipt.id,
           item_count: itemCount,
-          has_items: hasRealItems,
           first_item_has_name: firstItemHasName,
-          used_placeholder_items: usedPlaceholderItems,
+          first_item_has_name_key: firstItemHasNameKey,
+          first_item_keys: receiptItemsData?.[0] ? Object.keys(receiptItemsData[0]).join(', ') : 'none',
         });
 
-        // Return items exactly as they come from database (same as /receipts/:id)
-        // Do NOT transform or add placeholder items - only return what exists in DB
-        const receiptItems = receiptItemsData.map(item => {
+        // Map items to include both item_name (from DB) and name (alias for frontend compatibility)
+        // Only use "Unknown Item" if item_name is truly null/empty in the DB
+        const receiptItems = (receiptItemsData || []).map(item => {
           // Use item_name from database (database column name)
-          const itemName = item.item_name || 'Unknown Item'; // Fallback only if truly NULL in DB
+          // Fallback to 'Unknown Item' only if item_name is truly NULL or empty in DB
+          const itemName = (item.item_name && item.item_name.trim() !== '') ? item.item_name : 'Unknown Item';
           
           return {
             id: item.id,
             receipt_id: item.receipt_id,
-            // Provide both 'name' and 'item_name' for frontend compatibility
-            // Frontend can use either field
-            name: itemName,
+            // Include item_name from DB (primary field)
             item_name: itemName,
+            // Include name as alias equal to item_name for frontend compatibility
+            name: itemName,
             item_price: String(item.item_price || '0'),
             quantity: item.quantity || 1,
             created_at: item.created_at,
