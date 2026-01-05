@@ -438,9 +438,9 @@ export default function VerifyReceipt() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Items</h3>
             <div className="space-y-3">
               {receipt.receipt_items.map((item, idx) => {
-                // Use name or item_name (API provides both for compatibility)
-                // Database column is 'item_name', but API also provides 'name' alias
-                const itemName = (item as any).name || (item as any).item_name || 'Unknown Item';
+                // Use item_name as primary (database column name)
+                // Keep name as fallback only for compatibility
+                const itemName = (item as any).item_name || (item as any).name || 'Unknown Item';
                 
                 // Check if this item is disputed
                 const disputedItem = dispute?.disputed_items?.find(di => {
@@ -589,9 +589,12 @@ export default function VerifyReceipt() {
           )}
           {/* Debug footer - only shown when DEBUG_VERIFY env var is set */}
           {process.env.NEXT_PUBLIC_DEBUG_VERIFY === 'true' && receipt && (
-            <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-400">
-              <p>Items fetched: {receipt.receipt_items?.length || 0}</p>
+            <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-400 space-y-1">
+              <p>Items count: {receipt.receipt_items?.length || 0}</p>
               <p>Receipt ID: {receipt.id?.substring(0, 8)}...</p>
+              {receipt.receipt_items && receipt.receipt_items.length > 0 && (
+                <p>First item keys: {Object.keys(receipt.receipt_items[0]).join(', ')}</p>
+              )}
             </div>
           )}
         </div>
