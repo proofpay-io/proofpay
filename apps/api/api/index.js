@@ -433,8 +433,13 @@ fastify.post('/api/disputes', async (request, reply) => {
             });
           } else {
             fastify.log.error('❌ [VERIFY-API] Error fetching items from DB:', {
-              error: dbError,
+              error_message: dbError?.message || 'Unknown error',
+              error_code: dbError?.code || 'NO_CODE',
+              error_details: dbError?.details || 'NO_DETAILS',
+              error_hint: dbError?.hint || 'NO_HINT',
               receipt_id: receipt.id,
+              supabase_configured: supabase ? 'YES' : 'NO',
+              full_error: dbError ? JSON.stringify(dbError) : 'NO_ERROR_OBJECT',
             });
           }
         }
