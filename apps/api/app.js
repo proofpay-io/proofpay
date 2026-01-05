@@ -868,6 +868,14 @@ const start = async () => {
           first_item_has_name: finalReceiptItems[0]?.item_name ? true : false,
         });
 
+        // CRITICAL: Log the actual response object before sending
+        fastify.log.info('🔍 [VERIFY] Sending response with receipt_items:', {
+          response_receipt_items_count: response.receipt.receipt_items.length,
+          response_first_item_keys: response.receipt.receipt_items[0] ? Object.keys(response.receipt.receipt_items[0]).join(', ') : 'none',
+          response_first_item_name: response.receipt.receipt_items[0]?.item_name || 'MISSING',
+          response_first_item_full: response.receipt.receipt_items[0] ? JSON.stringify(response.receipt.receipt_items[0]) : 'none',
+        });
+
         // Set cache-control headers to prevent caching
         reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         reply.header('Pragma', 'no-cache');
