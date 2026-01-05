@@ -804,19 +804,17 @@ const start = async () => {
           // Error already logged, just catch to prevent unhandled rejection
         });
 
-        // Log final response structure before sending
-        fastify.log.info('🔍 [VERIFY] Final response structure', {
-          receipt_id: receipt.id,
-          receipt_items_count: receiptItems.length,
-          first_item_keys: receiptItems[0] ? Object.keys(receiptItems[0]).join(', ') : 'none',
-          first_item_has_item_name: receiptItems[0]?.item_name ? true : false,
-          first_item_name: receiptItems[0]?.item_name || 'MISSING',
-          first_item_full: JSON.stringify(receiptItems[0] || {}),
-        });
-
         // CRITICAL: Ensure receipt_items have item_name before sending response
         // Map items to explicitly guarantee item_name is present
-        const finalReceiptItems = (receiptItems || []).map(item => {
+        // Use receiptItems from first mapping (which should have item_name from getReceiptByToken)
+        const finalReceiptItems = (receiptItems || []).map((item, idx) => {
+          // Log what we're mapping
+          fastify.log.info(`🔍 [VERIFY] Final mapping item ${idx}:`, {
+            item_keys: Object.keys(item),
+            has_item_name: 'item_name' in item,
+            item_name_value: item.item_name,
+            item_full: JSON.stringify(item),
+          });
           // Log if item_name is missing
           if (!item.item_name) {
             fastify.log.error('❌ [VERIFY] Item missing item_name in final mapping:', {
