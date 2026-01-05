@@ -650,34 +650,12 @@ const start = async () => {
 
         const { verification_state, receipt, share } = result;
 
-        // Log verification resolution for diagnosis
-        const itemCount = receipt.receipt_items?.length || 0;
-        const firstItemHasItemName = receipt.receipt_items?.[0]?.item_name ? true : false;
-        const firstItemKeys = receipt.receipt_items?.[0] ? Object.keys(receipt.receipt_items[0]).join(', ') : 'none';
+        // IGNORE receipt.receipt_items from getReceiptByToken - it might not have item_name
+        // We'll fetch items ourselves with explicit columns
         
-        fastify.log.info('🔍 [VERIFY] Resolving token to receipt', {
-          token: token.substring(0, 4) + '...',
-          receipt_id: receipt.id,
-          item_count: itemCount,
-          first_item_has_item_name: firstItemHasItemName,
-          first_item_keys: firstItemKeys,
-        });
-
-        // Verify receipt_items have item_name - if missing, log warning
-        if (receipt.receipt_items && receipt.receipt_items.length > 0) {
-          const itemsWithoutName = receipt.receipt_items.filter(item => !item.item_name || item.item_name.trim() === '');
-          if (itemsWithoutName.length > 0) {
-            fastify.log.warn('⚠️ [VERIFY] Some receipt_items are missing item_name', {
-              receipt_id: receipt.id,
-              items_without_name: itemsWithoutName.length,
-              total_items: receipt.receipt_items.length,
-            });
-          }
-        }
-
         // FORCE: Fetch receipt_items directly with explicit column selection
         // This bypasses nested queries and ensures item_name is always included
-        fastify.log.info('🔍 [VERIFY] Fetching receipt_items directly with explicit columns', {
+        fastify.log.info('🔍 [VERIFY] Fetching receipt_items directly with explicit columns (IGNORING getReceiptByToken items)', {
           receipt_id: receipt.id,
         });
         
