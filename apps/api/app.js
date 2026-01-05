@@ -656,13 +656,16 @@ const start = async () => {
           receipt_id: receipt.id,
         });
 
-        // Fetch receipt items directly with explicit column selection
-        // Query Supabase for all receipt_items where receipt_id = receipt.id
-        const { data: receiptItemsData, error: itemsError } = await supabase
-          .from('receipt_items')
-          .select('id, item_name, item_price, quantity, created_at, updated_at, description, sku, variation, category')
-          .eq('receipt_id', receipt.id)
-          .order('created_at', { ascending: true });
+        // Fetch receipt items using nested query (same approach as /receipts/:id that works)
+        // This ensures we get all fields including item_name from the database
+        const { data: receiptWithItems, error: itemsError } = await supabase
+          .from('receipts')
+          .select(`
+            id,
+            receipt_items (*)
+          `)
+          .eq('id', receipt.id)
+          .single();
 
         if (itemsError) {
           fastify.log.error('❌ [VERIFY] Error fetching receipt items:', {
@@ -672,39 +675,41 @@ const start = async () => {
           });
         }
 
+        // Extract items from nested query result (same structure as /receipts/:id)
+        const receiptItemsData = receiptWithItems?.receipt_items || [];
+
         // Log diagnostic information (no sensitive data)
-        const itemCount = receiptItemsData?.length || 0;
+        const itemCount = receiptItemsData.length;
+        const hasRealItems = itemCount > 0;
+        const firstItemHasName = receiptItemsData[0]?.item_name ? true : false;
+        const usedPlaceholderItems = false; // We never use placeholders - only return real items from DB
+
         fastify.log.info('🔍 [VERIFY] Receipt items fetched', {
           token: token.substring(0, 4) + '...',
           receipt_id: receipt.id,
           item_count: itemCount,
-          has_items: itemCount > 0,
-          first_item_has_name: receiptItemsData?.[0]?.item_name ? true : false,
+          has_items: hasRealItems,
+          first_item_has_name: firstItemHasName,
+          used_placeholder_items: usedPlaceholderItems,
         });
 
-        // Map items to ensure consistent structure with name/item_name
-        // Always include item_name even if NULL/empty in database
-        const receiptItems = (receiptItemsData || []).map(item => {
-          const itemName = (item.item_name && String(item.item_name).trim()) || 'Unknown Item';
-          
-          return {
-            id: item.id,
-            // Provide both 'name' and 'item_name' for frontend compatibility
-            name: itemName,
-            item_name: itemName,
-            quantity: item.quantity || 1,
-            item_price: String(item.item_price || '0'),
-            total_price: item.item_price && item.quantity 
-              ? String((parseFloat(item.item_price) * (item.quantity || 1)).toFixed(2))
-              : String(item.item_price || '0'),
-            description: item.description || null,
-            sku: item.sku || null,
-            variation: item.variation || null,
-            category: item.category || null,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-          };
-        });
+        // Return items exactly as they come from database (same as /receipts/:id)
+        // Do NOT transform or add placeholder items - only return what exists in DB
+        const receiptItems = receiptItemsData.map(item => ({
+          id: item.id,
+          receipt_id: item.receipt_id,
+          // Use item_name directly from database (database column name)
+          item_name: item.item_name || 'Unknown Item', // Fallback only if truly NULL in DB
+          item_price: String(item.item_price || '0'),
+          quantity: item.quantity || 1,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          // Include optional fields if they exist
+          description: item.description || null,
+          sku: item.sku || null,
+          variation: item.variation || null,
+          category: item.category || null,
+        }));
 
         // Fetch dispute details if receipt is disputed
         let disputeInfo = null;

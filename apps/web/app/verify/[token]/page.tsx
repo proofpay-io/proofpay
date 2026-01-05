@@ -578,6 +578,13 @@ export default function VerifyReceipt() {
               )}
             </div>
           )}
+          {/* Debug footer - only shown when DEBUG_VERIFY env var is set */}
+          {process.env.NEXT_PUBLIC_DEBUG_VERIFY === 'true' && receipt && (
+            <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-400">
+              <p>Items fetched: {receipt.receipt_items?.length || 0}</p>
+              <p>Receipt ID: {receipt.id?.substring(0, 8)}...</p>
+            </div>
+          )}
         </div>
       </div>
     </main>
