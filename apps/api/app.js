@@ -650,6 +650,9 @@ const start = async () => {
 
         const { verification_state, receipt, share } = result;
 
+        // CRITICAL LOG: This should ALWAYS appear if code is executing
+        fastify.log.info('🔍 [VERIFY] Starting item fetch - receipt_id: ' + receipt.id);
+
         // IGNORE receipt.receipt_items from getReceiptByToken - it might not have item_name
         // We'll fetch items ourselves with explicit columns
         
